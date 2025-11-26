@@ -1,0 +1,83 @@
+Metadata-Version: 2.4
+Name: revefi-llm-sdk
+Version: 0.1.0
+Summary: LLM observability SDK for Revefi - Traceloop-based monitoring with custom ingestor service
+Author-email: Revefi <support@revefi.com>
+License: MIT
+Project-URL: Homepage, https://github.com/revefi/revefi-llm-sdk
+Project-URL: Repository, https://github.com/revefi/revefi-llm-sdk
+Project-URL: Issues, https://github.com/revefi/revefi-llm-sdk/issues
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: System :: Monitoring
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: opentelemetry-api>=1.20.0
+Requires-Dist: opentelemetry-sdk>=1.20.0
+Requires-Dist: opentelemetry-exporter-otlp-proto-http>=1.20.0
+Requires-Dist: traceloop-sdk>=0.18.0
+Requires-Dist: opentelemetry-instrumentation>=0.41b0
+Requires-Dist: opentelemetry-instrumentation-openai>=0.18.0
+Requires-Dist: opentelemetry-instrumentation-anthropic>=0.18.0
+Dynamic: license-file
+
+# Revefi LLM SDK
+
+A minimal Python SDK for LLM observability with Revefi's monitoring platform.
+
+## Installation
+
+```bash
+pip install revefi-llm-sdk
+```
+
+## Quick Start
+
+```python
+from revefi_llm_sdk import init_llm_observability
+
+# Initialize the SDK
+init_llm_observability(
+    api_key="your-revefi-api-key",
+    agent_name="my-llm-agent",
+    ingestor_url="https://your-revefi-instance.com"  # optional
+)
+
+# Your LLM calls will now be automatically tracked
+import openai
+client = openai.OpenAI()
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+## Configuration
+
+- `api_key`: Your Revefi API key for authentication
+- `agent_name`: Name identifier for your agent/application  
+- `ingestor_url`: Revefi ingestor service URL (defaults to localhost:6556)
+
+## Supported LLM Providers
+
+- OpenAI
+- Anthropic
+
+## Environment Variables
+
+```bash
+LLM_INGESTOR_URL=https://your-revefi-instance.com
+```
+
+## License
+
+MIT
