@@ -17,7 +17,7 @@ from revefi_llm_sdk import init_llm_observability
 init_llm_observability(
     api_key="your-revefi-api-key",
     agent_name="my-llm-agent",
-    ingestor_url="https://your-revefi-instance.com"  # optional
+    ingestor_url="https://your-revefi-instance.com"
 )
 
 # Your LLM calls will now be automatically tracked
@@ -40,11 +40,34 @@ response = client.chat.completions.create(
 - OpenAI
 - Anthropic
 
-## Environment Variables
+## Development & Distribution
+
+### Building Distribution Files
+
+The `dist/` directory contains the distribution files that are built from the source code and uploaded to PyPI. These files are generated using Python's build tools:
 
 ```bash
-LLM_INGESTOR_URL=https://your-revefi-instance.com
+# Build distribution files (generates .whl and .tar.gz files in dist/)
+python -m build
+
+# This creates:
+# - dist/revefi_llm_sdk-{version}-py3-none-any.whl (wheel package)
+# - dist/revefi_llm_sdk-{version}.tar.gz (source distribution)
 ```
+
+### Publishing to PyPI
+
+The distribution files are uploaded to the Python Package Index (PyPI) registry using `twine`:
+
+```bash
+# Upload to PyPI (requires valid PyPI credentials)
+python -m twine upload dist/*
+
+# For testing, upload to Test PyPI first:
+python -m twine upload --repository testpypi dist/*
+```
+
+**Note**: The files in `dist/` are automatically generated and should not be manually edited. They are created from the source code defined in `revefi_llm_sdk/` and the project configuration in `pyproject.toml`.
 
 ## License
 
