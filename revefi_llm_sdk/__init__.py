@@ -1,11 +1,15 @@
 """Revefi LLM SDK - Traceloop-based LLM observability with llm-ingestor-service."""
 
+import logging
 import os
 
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import \
     OTLPSpanExporter
 from traceloop.sdk import Traceloop
 from traceloop.sdk.instruments import Instruments
+
+# Get logger for this module
+logger = logging.getLogger(__name__)
 
 # Set HTTP protocol BEFORE using Traceloop (sends protobuf over HTTP)
 os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http"
@@ -21,28 +25,38 @@ def init_llm_observability(
     Args:
         api_key: API key for ingestor authentication
         agent_name: Name of the agent to associate with traces
-        ingestor_url: URL of the llm-ingestor-service (optional, defaults to localhost:6556)
+        ingestor_url: URL of the llm-ingestor-service (optional, defaults to localhost:3000)
 
     Returns:
         Boolean indicating if initialization was successful
     """
     try:
+        logger.info(f"Starting LLM observability initialization for agent: {agent_name}")
+
         # Default to localhost if not specified, or use environment variable
         if ingestor_url is None:
-            ingestor_url = os.getenv("LLM_INGESTOR_URL", "http://localhost:6556")
+            ingestor_url = os.getenv("LLM_INGESTOR_URL", "http://localhost:3000")
+
+        logger.info(f"Using ingestor URL: {ingestor_url}")
+        logger.info(f"API key provided: {'Yes' if api_key else 'No'}")
 
         # Disable Traceloop cloud service completely
         os.environ["TRACELOOP_BASE_URL"] = ""
         os.environ["TRACELOOP_API_KEY"] = "disabled"
 
         # Create custom OTLP exporter for llm-ingestor-service
+        endpoint_url = f"{ingestor_url}/api/v1/traces/ingest"
+        logger.info(f"Creating OTLP exporter with endpoint: {endpoint_url}")
+
         custom_exporter = OTLPSpanExporter(
-            endpoint=f"{ingestor_url}/v1/traces",
+            endpoint=endpoint_url,
             headers={"authorization": f"Bearer {api_key}"},
         )
+        logger.info("OTLP exporter created successfully")
 
         # Initialize Traceloop - allow only LLM instruments
         # Using custom exporter to send traces to llm-ingestor-service
+        logger.info("Initializing Traceloop with custom exporter")
         Traceloop.init(
             app_name=agent_name,
             disable_batch=False,
@@ -50,11 +64,11 @@ def init_llm_observability(
             instruments={Instruments.OPENAI, Instruments.ANTHROPIC}  # Only LLM instruments
         )
 
-        print(f"Traceloop OpenLLMetry initialized with llm-ingestor-service: {ingestor_url}")
+        logger.info(f"Traceloop OpenLLMetry initialized successfully with llm-ingestor-service: {ingestor_url}")
         return True
 
     except Exception as e:
-        print(f"Traceloop initialization failed: {e}")
+        logger.error(f"Traceloop initialization failed: {e}")
         return False
 
 
