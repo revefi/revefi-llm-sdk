@@ -61,7 +61,7 @@ def init_llm_observability(
             app_name=agent_name,
             disable_batch=False,
             exporter=custom_exporter,  # Use our custom exporter
-            instruments={Instruments.OPENAI, Instruments.ANTHROPIC}  # Only LLM instruments
+            instruments={Instruments.OPENAI, Instruments.ANTHROPIC, Instruments.LANGCHAIN}  # Only LLM instruments
         )
 
         logger.info(f"Traceloop OpenLLMetry initialized successfully with llm-ingestor-service: {ingestor_url}")
