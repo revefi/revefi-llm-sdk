@@ -54,6 +54,7 @@ python -m build
 # - dist/revefi_llm_sdk-{version}-py3-none-any.whl (wheel package)
 # - dist/revefi_llm_sdk-{version}.tar.gz (source distribution)
 ```
+Update the version in pyproject.toml before building to ensure the correct version is included in the distribution files.
 
 ### Publishing to PyPI
 

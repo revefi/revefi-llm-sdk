@@ -56,12 +56,17 @@ def init_llm_observability(
 
         # Initialize Traceloop - allow only LLM instruments
         # Using custom exporter to send traces to llm-ingestor-service
-        logger.info("Initializing Traceloop with custom exporter")
+        logger.info("Initializing Traceloop with custom exporter including langchain")
         Traceloop.init(
             app_name=agent_name,
             disable_batch=False,
             exporter=custom_exporter,  # Use our custom exporter
-            instruments={Instruments.OPENAI, Instruments.ANTHROPIC}  # Only LLM instruments
+            instruments={
+                Instruments.OPENAI,
+                Instruments.ANTHROPIC,
+                Instruments.LANGCHAIN,
+                Instruments.GOOGLE_GENERATIVEAI  # Google Gemini SDK
+            }  # Only LLM instruments
         )
 
         logger.info(f"Traceloop OpenLLMetry initialized successfully with llm-ingestor-service: {ingestor_url}")
