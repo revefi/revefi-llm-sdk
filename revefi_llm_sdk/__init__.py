@@ -17,21 +17,21 @@ os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http"
 
 def init_llm_observability(
     api_key: str,
-    agent_name: str,
+    service_name: str,
     ingestor_url: str = None
 ) -> bool:
     """Initialize Traceloop OpenLLMetry with llm-ingestor-service.
 
     Args:
         api_key: API key for ingestor authentication
-        agent_name: Name of the agent to associate with traces
+        service_name: Name of the service to associate with traces
         ingestor_url: URL of the llm-ingestor-service (optional, defaults to localhost:3000)
 
     Returns:
         Boolean indicating if initialization was successful
     """
     try:
-        logger.info(f"Starting LLM observability initialization for agent: {agent_name}")
+        logger.info(f"Starting LLM observability initialization for service: {service_name}")
 
         # Default to localhost if not specified, or use environment variable
         if ingestor_url is None:
@@ -58,7 +58,7 @@ def init_llm_observability(
         # Using custom exporter to send traces to llm-ingestor-service
         logger.info("Initializing Traceloop with custom exporter including langchain")
         Traceloop.init(
-            app_name=agent_name,
+            app_name=service_name,
             disable_batch=False,
             exporter=custom_exporter,  # Use our custom exporter
             instruments={
@@ -77,15 +77,18 @@ def init_llm_observability(
         return False
 
 
-def set_context(user_id: str, **tags) -> None:
+def set_context(user_id: str, agent_name: str, **tags) -> None:
     """Set context for LLM observability traces.
     Args:
         user_id: User's id to associate with traces
+        agent_name: Name of the agent to associate with traces
         tags: Dictionary of custom tags to associate with traces
     """
     if tags and not validate_tags(tags):
         raise ValueError("Invalid tags provided for LLM observability traces.")
-    Traceloop.set_association_properties({"user_id": user_id, **tags})
+    Traceloop.set_association_properties(
+        {"user_id": user_id, "agent_name": agent_name, **tags}
+    )
 
 
 # Should be a private method in the SDK
