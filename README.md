@@ -17,7 +17,9 @@ from revefi_llm_sdk import init_llm_observability
 init_llm_observability(
     api_key="your-revefi-api-key",
     agent_name="my-llm-agent",
-    ingestor_url="https://your-revefi-instance.com"
+    ingestor_url="https://your-revefi-instance.com",
+    # Send prompt and completion text to Revefi. Off by default.
+    capture_content=False
 )
 
 # Your LLM calls will now be automatically tracked
@@ -34,6 +36,7 @@ response = client.chat.completions.create(
 - `api_key`: Your Revefi API key for authentication
 - `agent_name`: Name identifier for your agent/application  
 - `ingestor_url`: Revefi ingestor service URL (defaults to localhost:6556)
+- `capture_content`: Whether to send prompt and completion text (defaults to `False`). Metadata — model, token counts, latency, cost, tool names, tags — is always sent.
 
 ## Supported LLM Providers
 

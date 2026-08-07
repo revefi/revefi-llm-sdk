@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 # Traceloop sends protobuf over HTTP; this must be set before Traceloop is used.
 os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http"
 
+# Upstream OpenLLMetry env var gating prompt/completion capture; only "true" enables it.
+_TRACE_CONTENT_ENV = "TRACELOOP_TRACE_CONTENT"
+
 # Span attribute carrying a per-request test_prompt_id from the request thread to the export thread.
 _TEST_PROMPT_ID_ATTR = "revefi.test_prompt_id"
 # HTTP header the ingestor reads to map a run's traces to its test_prompt_id.
@@ -115,7 +118,8 @@ class _TestPromptIdRoutingExporter(SpanExporter):
 def init_llm_observability(
     api_key: str,
     service_name: str,
-    ingestor_url: str = None
+    ingestor_url: str = None,
+    capture_content: bool = False
 ) -> bool:
     """Initialize Traceloop OpenLLMetry with llm-ingestor-service.
 
@@ -123,6 +127,9 @@ def init_llm_observability(
         api_key: API key for ingestor authentication
         service_name: Name of the service to associate with traces
         ingestor_url: URL of the llm-ingestor-service (optional, defaults to localhost:3000)
+        capture_content: Whether to capture prompt and completion text. Defaults to False, so
+            prompts are only sent on explicit opt-in. Metadata (model, tokens, latency, cost,
+            tool names, tags) is captured either way.
 
     Returns:
         Boolean indicating if initialization was successful
@@ -140,6 +147,11 @@ def init_llm_observability(
         # Disable Traceloop cloud service completely
         os.environ["TRACELOOP_BASE_URL"] = ""
         os.environ["TRACELOOP_API_KEY"] = "disabled"
+
+        # Gates every prompt/completion attribute the instrumentors write. Set unconditionally so an
+        # ambient TRACELOOP_TRACE_CONTENT cannot re-enable capture behind the default.
+        os.environ[_TRACE_CONTENT_ENV] = "true" if capture_content else "false"
+        logger.info(f"LLM prompt/completion content capture: {'enabled' if capture_content else 'disabled'}")
 
         # Create custom OTLP exporter for llm-ingestor-service
         endpoint_url = f"{ingestor_url}/api/v1/traces/ingest"
