@@ -3,7 +3,8 @@
 import contextvars
 import logging
 import os
-from typing import Optional, Sequence
+from contextlib import contextmanager
+from typing import Iterator, Optional, Sequence
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import \
@@ -21,6 +22,11 @@ os.environ["OTEL_EXPORTER_OTLP_PROTOCOL"] = "http"
 # Upstream OpenLLMetry env var gating prompt/completion capture; only "true" enables it.
 _TRACE_CONTENT_ENV = "TRACELOOP_TRACE_CONTENT"
 
+# Traceloop's span-kind attribute. Revefi resolves a run's agent trace by looking for this value,
+# so the name and the value are a wire contract, not an implementation detail.
+_SPAN_KIND_ATTR = "traceloop.span.kind"
+_SPAN_KIND_AGENT = "agent"
+
 # Span attribute carrying a per-request test_prompt_id from the request thread to the export thread.
 _TEST_PROMPT_ID_ATTR = "revefi.test_prompt_id"
 # HTTP header the ingestor reads to map a run's traces to its test_prompt_id.
@@ -37,6 +43,26 @@ def set_request_test_prompt_id(test_prompt_id: Optional[str]) -> None:
     Must be called on the same thread/context that creates the spans.
     """
     _test_prompt_id_var.set(test_prompt_id or "")
+
+
+@contextmanager
+def agent_turn(name: str = "agent_turn") -> Iterator[trace.Span]:
+    """Mark the work that answers the user, so Revefi can identify this turn's trace.
+
+    One turn usually produces several traces - the agent's, plus one per extra call the app makes
+    around it (titling, follow-up suggestions, guardrails). Wrap the work that produces the answer
+    and nothing that runs after it; anything left inside the block can be taken for the answer.
+
+        with agent_turn():
+            answer = my_agent.run(user_message)
+
+    Works for a streamed turn: keep the iteration inside the block so the span stays open until the
+    stream is drained.
+    """
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span(name) as span:
+        span.set_attribute(_SPAN_KIND_ATTR, _SPAN_KIND_AGENT)
+        yield span
 
 
 class _TestPromptIdSpanProcessor(SpanProcessor):
